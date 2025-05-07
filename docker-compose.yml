@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/currency_converter
+      - SECRET_KEY=${SECRET_KEY:-5f8c83b4-0532-40b4-9f9c-7acca5b7a98d}
+      - EXCHANGE_API_KEY=${EXCHANGE_API_KEY:-3afdfcec62a73d0467a5ae1e}
+    depends_on:
+      - db
+    command: >
+      bash -c "
+        echo 'Waiting for database to be ready...' &&
+        sleep 5 &&
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=currency_converter
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data: 
